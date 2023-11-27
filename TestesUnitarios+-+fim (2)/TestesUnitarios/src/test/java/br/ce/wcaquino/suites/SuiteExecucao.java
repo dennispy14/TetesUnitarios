@@ -7,7 +7,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import br.ce.wcaquino.servicos.CalculadoraTest;
 import br.ce.wcaquino.servicos.CalculoValorLocacaoTest;
 import br.ce.wcaquino.servicos.LocacaoServiceTest;
-
+//Comentado para que o Junit não enxergue esse suite
 //@RunWith(Suite.class)
 @SuiteClasses({
 	CalculadoraTest.class,
