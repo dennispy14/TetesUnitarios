@@ -8,7 +8,7 @@ public class FilmeBuilder {
 
     private FilmeBuilder(){}
 
-    public static FilmeBuilder unFilme(){
+    public static FilmeBuilder umFilme(){
         FilmeBuilder builder = new FilmeBuilder();
         builder.filme = new Filme();
         builder.filme.setEstoque(2);
@@ -16,6 +16,26 @@ public class FilmeBuilder {
         builder.filme.setPrecoLocacao(4.0);
 
         return  builder;
+    }
+
+    public static FilmeBuilder umFilmeSemEstoque(){
+        FilmeBuilder builder = new FilmeBuilder();
+        builder.filme = new Filme();
+        builder.filme.setEstoque(0);
+        builder.filme.setNome("Filme 1");
+        builder.filme.setPrecoLocacao(4.0);
+
+        return  builder;
+    }
+
+    public FilmeBuilder semEstoque(){
+        filme.setEstoque(0);
+        return this;
+    }
+
+    public FilmeBuilder comValor(Double valor){
+        filme.setPrecoLocacao(valor);
+        return this;
     }
 
     public Filme agora(){
