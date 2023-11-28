@@ -114,9 +114,8 @@ public class LocacaoServiceTest {
 		
 	}
 
-
-	public static void main(String[] args){
-		new BuilderMaster().gerarCodigoClasse(Locacao.class);
-	}
-
+	// Incluido main para testar a utilização do masterBuilder
+	//	public static void main(String[] args){
+	//		new BuilderMaster().gerarCodigoClasse(Locacao.class);
+	//	}
 }
