@@ -31,31 +31,28 @@ import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.utils.DataUtils;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 public class LocacaoServiceTest {
 
-	@InjectMocks
-	private LocacaoService service;
-	@Mock
-	private SPCService spc;
-	@Mock
-	private LocacaoDAO dao;
-	@Mock
-	private EmailService email;
+    @InjectMocks
+    private LocacaoService service;
+    @Mock
+    private SPCService spc;
+    @Mock
+    private LocacaoDAO dao;
+    @Mock
+    private EmailService email;
 
-	@Rule
-	public ErrorCollector error = new ErrorCollector();
-	
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
-	
-	@Before
-	public void setup(){
-		MockitoAnnotations.initMocks(this);
+    @Rule
+    public ErrorCollector error = new ErrorCollector();
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
 		/*service = new LocacaoService();
 		dao = Mockito.mock(LocacaoDAO.class);
 		service.setLocacaoDAO(dao);
@@ -64,146 +61,165 @@ public class LocacaoServiceTest {
 		email = Mockito.mock(EmailService.class);
 		service.setEmailService(email);*/ // Comentado pois ao incluir as Anotations os mocks são iniciados automaticamente
 
-	}
-	
-	@Test
-	public void deveAlugarFilme() throws Exception {
-		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-		
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().comValor(5.0).agora());
-		
-		//acao
-		Locacao locacao = service.alugarFilme(usuario, filmes);
-			
-		//verificacao
-		error.checkThat(locacao.getValor(), is(equalTo(5.0)));
-		error.checkThat(locacao.getDataLocacao(), ehHoje());
-		error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaDias(1));
-	}
-	
-	@Test(expected = FilmeSemEstoqueException.class) //Este teste aguarda uma Exception
-	public void naoDeveAlugarFilmeSemEstoque() throws Exception{
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilmeSemEstoque().agora());
-		
-		//acao
-		service.alugarFilme(usuario, filmes);
-	}
-	
-	@Test
-	public void naoDeveAlugarFilmeSemUsuario() throws FilmeSemEstoqueException{
-		//cenario
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
-		
-		//acao
-		try {
-			service.alugarFilme(null, filmes);
-			Assert.fail();
-		} catch (LocadoraException e) {
-			assertThat(e.getMessage(), is("Usuario vazio"));
-		}
-	}
+    }
 
-	@Test
-	public void naoDeveAlugarFilmeSemFilme() throws FilmeSemEstoqueException, LocadoraException{
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		
-		exception.expect(LocadoraException.class);
-		exception.expectMessage("Filme vazio");
-		
-		//acao
-		service.alugarFilme(usuario, null);
-	}
-	
-	@Test
-	public void deveDevolverNaSegundaAoAlugarNoSabado() throws FilmeSemEstoqueException, LocadoraException{
-		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-		
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
-		
-		//acao
-		Locacao retorno = service.alugarFilme(usuario, filmes);
-		
-		//verificacao
-		assertThat(retorno.getDataRetorno(), caiNumaSegunda());
-		
-	}
+    @Test
+    public void deveAlugarFilme() throws Exception {
+        Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 
-	// Incluido main para testar a utilização do masterBuilder
-	//	public static void main(String[] args){
-	//		new BuilderMaster().gerarCodigoClasse(Locacao.class);
-	//	}
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().comValor(5.0).agora());
 
-	@Test
-	public void naoDeveAlugarFilmeParaNegativadoSPC() throws Exception {
+        //acao
+        Locacao locacao = service.alugarFilme(usuario, filmes);
 
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+        //verificacao
+        error.checkThat(locacao.getValor(), is(equalTo(5.0)));
+        error.checkThat(locacao.getDataLocacao(), ehHoje());
+        error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaDias(1));
+    }
 
-		Mockito.when(spc.possuiNegativacao(Mockito.any(Usuario.class))).thenReturn(true);
+    @Test(expected = FilmeSemEstoqueException.class) //Este teste aguarda uma Exception
+    public void naoDeveAlugarFilmeSemEstoque() throws Exception {
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilmeSemEstoque().agora());
 
-		//ação
-		try {
-			service.alugarFilme(usuario, filmes);
-			Assert.fail();
-		}catch (LocadoraException e){
-			Assert.assertThat(e.getMessage(), is("Usuário Negativado!"));
-		}
+        //acao
+        service.alugarFilme(usuario, filmes);
+    }
 
-		//verificação
-		Mockito.verify(spc).possuiNegativacao(usuario);
-	}
+    @Test
+    public void naoDeveAlugarFilmeSemUsuario() throws FilmeSemEstoqueException {
+        //cenario
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
 
-	@Test
-	public void deveEnviarEmailParaLocacoesAtrasados() {
+        //acao
+        try {
+            service.alugarFilme(null, filmes);
+            Assert.fail();
+        } catch (LocadoraException e) {
+            assertThat(e.getMessage(), is("Usuario vazio"));
+        }
+    }
 
-		//cenario
-		Usuario usuario  = UsuarioBuilder.umUsuario().agora();
-		Usuario usuario2  = UsuarioBuilder.umUsuario().comNome("Usuario em dia").agora();
-		Usuario usuario3  = UsuarioBuilder.umUsuario().comNome("Outro atrasado").agora();
-		List<Locacao> locacoes = Arrays.asList(
-				LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario).agora(),
-				LocacaoBuilder.umLocacao().comUsuario(usuario2).agora(),
-				LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora(),
-				LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora());//Incluido mais uma situação com o mesmo usuario para validar quantos emails ele recebera
+    @Test
+    public void naoDeveAlugarFilmeSemFilme() throws FilmeSemEstoqueException, LocadoraException {
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
 
-		Mockito.when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
+        exception.expect(LocadoraException.class);
+        exception.expectMessage("Filme vazio");
 
-		//ação
-		service.notificarAtrasos();
+        //acao
+        service.alugarFilme(usuario, null);
+    }
 
-		//verificação
-		Mockito.verify(email, Mockito.times(3)).notificarAtraso(Mockito.any(Usuario.class));// Verifica a partir da classe Usuario se alguma notificação foi enviada
-		Mockito.verify(email).notificarAtraso(usuario);
-		Mockito.verify(email,Mockito.atLeastOnce()).notificarAtraso(usuario3);//Incluido atLastOnce impede que a verificação falhe, ja que o mesmo usuario receberia mais de 1 email.
-		                                                                      // Outros exemplos:  times(2) * quantos emails ele tem que receber, no caso 2
-																		      // atLast(2) * Pelo menos 2 emails
-																			  // atMost(2) * No maximo 2
-		Mockito.verify(email, Mockito.never()).notificarAtraso(usuario2); //Garante que quem não deveria receber email não esta recebendo com a inclusão do never()
-		Mockito.verifyNoMoreInteractions(email);
-	}
+    @Test
+    public void deveDevolverNaSegundaAoAlugarNoSabado() throws FilmeSemEstoqueException, LocadoraException {
+        Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 
-	@Test
-	public void deveTratarErronoSPC() throws Exception{
-		//cenario
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
 
-		Mockito.when(spc.possuiNegativacao(usuario)).thenThrow(new Exception("Falha no engano!"));
+        //acao
+        Locacao retorno = service.alugarFilme(usuario, filmes);
 
-		//verificação
-		exception.expect(LocadoraException.class);
-		exception.expectMessage("Problemas com SPC, tente novamente");
+        //verificacao
+        assertThat(retorno.getDataRetorno(), caiNumaSegunda());
 
-		//ação
-		service.alugarFilme(usuario, filmes);
+    }
 
-	}
+    // Incluido main para testar a utilização do masterBuilder
+    //	public static void main(String[] args){
+    //		new BuilderMaster().gerarCodigoClasse(Locacao.class);
+    //	}
+
+    @Test
+    public void naoDeveAlugarFilmeParaNegativadoSPC() throws Exception {
+
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+
+        Mockito.when(spc.possuiNegativacao(Mockito.any(Usuario.class))).thenReturn(true);
+
+        //ação
+        try {
+            service.alugarFilme(usuario, filmes);
+            Assert.fail();
+        } catch (LocadoraException e) {
+            Assert.assertThat(e.getMessage(), is("Usuário Negativado!"));
+        }
+
+        //verificação
+        Mockito.verify(spc).possuiNegativacao(usuario);
+    }
+
+    @Test
+    public void deveEnviarEmailParaLocacoesAtrasados() {
+
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        Usuario usuario2 = UsuarioBuilder.umUsuario().comNome("Usuario em dia").agora();
+        Usuario usuario3 = UsuarioBuilder.umUsuario().comNome("Outro atrasado").agora();
+        List<Locacao> locacoes = Arrays.asList(
+                LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario).agora(),
+                LocacaoBuilder.umLocacao().comUsuario(usuario2).agora(),
+                LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora(),
+                LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora());//Incluido mais uma situação com o mesmo usuario para validar quantos emails ele recebera
+
+        Mockito.when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
+
+        //ação
+        service.notificarAtrasos();
+
+        //verificação
+        Mockito.verify(email, Mockito.times(3)).notificarAtraso(Mockito.any(Usuario.class));// Verifica a partir da classe Usuario se alguma notificação foi enviada
+        Mockito.verify(email).notificarAtraso(usuario);
+        Mockito.verify(email, Mockito.atLeastOnce()).notificarAtraso(usuario3);//Incluido atLastOnce impede que a verificação falhe, ja que o mesmo usuario receberia mais de 1 email.
+        // Outros exemplos:  times(2) * quantos emails ele tem que receber, no caso 2
+        // atLast(2) * Pelo menos 2 emails
+        // atMost(2) * No maximo 2
+        Mockito.verify(email, Mockito.never()).notificarAtraso(usuario2); //Garante que quem não deveria receber email não esta recebendo com a inclusão do never()
+        Mockito.verifyNoMoreInteractions(email);
+    }
+
+    @Test
+    public void deveTratarErronoSPC() throws Exception {
+        //cenario
+        Usuario usuario = UsuarioBuilder.umUsuario().agora();
+        List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+
+        Mockito.when(spc.possuiNegativacao(usuario)).thenThrow(new Exception("Falha no engano!"));
+
+        //verificação
+        exception.expect(LocadoraException.class);
+        exception.expectMessage("Problemas com SPC, tente novamente");
+
+        //ação
+        service.alugarFilme(usuario, filmes);
+
+    }
+
+    @Test
+    public void deveProrrogarUmaLocacao() {
+        //cenario
+        Locacao locacao = LocacaoBuilder.umLocacao().agora();
+
+        //acao
+        service.prorrogarLocacao(locacao, 3);
+
+        //verificação
+        ArgumentCaptor<Locacao> argCapt = ArgumentCaptor.forClass(Locacao.class);
+        Mockito.verify(dao).salvar(argCapt.capture());
+        Locacao locacaoRetornada = argCapt.getValue();
+
+        error.checkThat(locacaoRetornada.getValor(), is(12.0));
+        error.checkThat(locacaoRetornada.getDataLocacao(), ehHoje());
+        error.checkThat(locacaoRetornada.getDataRetorno(), ehHojeComDiferencaDias(3));
+
+    }
 }
